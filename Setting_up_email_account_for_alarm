@@ -1,0 +1,16 @@
+Sending e-mail from Python script
+(1)	Create g-mail account
+(2)	Install google client libraries into python, https://developers.google.com/gmail/api/quickstart/python
+(3)	Massage google account to give access to your script:
+You need to create a project https://developers.google.com/workspace/guides/create-project 
+You need to create credentials: https://www.thepythoncode.com/article/use-gmail-api-in-python user your own e-mail address
+Enable the API: https://developers.google.com/workspace/guides/enable-apis 
+(you want gmail api)
+Authorization for the API: https://developers.google.com/workspace/guides/auth-overview 
+Chose Scope for the script:  https://developers.google.com/workspace/guides/configure-oauth-consent#choose-scopes 
+https://developers.google.com/identity/protocols/oauth2/scopes#gmail 
+Suggest to go with: https://www.googleapis.com/auth/gmail.modify
+Has to be added under API & Services OAuth consent screen (edit app registration)
+Test user:  the e-mail address from before 
+(4)	Create testing script:
+https://developers.google.com/gmail/api/quickstart/python 
