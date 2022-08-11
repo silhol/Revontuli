@@ -1,5 +1,6 @@
 # Revontuli
-Python script that checks for northern lights close to the user and sends e-mail, if something is to see. This script is only for Finland and will not work with other countries. It is customized to use the finnish space weather observation website.
+
+Revontuli is a Python script that checks for northern lights close to the user and sends e-mail, if something is potentially to see. This script is only for Finland and will not work with other countries. It is customized to use the finnish space weather observation website. The notification part can probably be used also for other things, but the "nothern lights detection" part is specific to Finland.
 
 This repository consists out of an python script that checks every 10 minutes the finnish FMI website https://en.ilmatieteenlaitos.fi/auroras-and-space-weather for electromagnetical disturbances. If a disturbance (i.e. there might be some aurora borealis to see) then an e-mail is sent. 
 
