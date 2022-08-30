@@ -20,3 +20,6 @@ Sending e-mail from Python script:
 https://developers.google.com/gmail/api/quickstart/python 
 Run the test script, you should see something like "you got access to an app .....". After some "continue" you should see:
 "The authentication flow has completed. You may close this window."
+
+(5) Create e-mail and send it
+https://developers.google.com/gmail/api/guides/sending#python
