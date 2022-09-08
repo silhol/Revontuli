@@ -1,5 +1,7 @@
 # Revontuli
 
+THE PROJECT IS STILL IN CREATION PHASE
+
 Revontuli is a Python script that checks for northern lights in Finland close to the user and sends e-mail, if something is potentially to see. This script is only for Finland and will not work with other countries. It is customized to use the finnish space weather observation website, which publishes the latest observations in 10 minute intervalls on the web. The notification part can probably be used also for other things, but the "nothern lights detection" part is specific to Finland.
 
 The idea is that you get an explicit notification and do not need to check the finnish space weather web site every 10 minutes.
