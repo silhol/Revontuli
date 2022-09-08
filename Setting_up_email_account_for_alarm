@@ -16,6 +16,8 @@ Sending e-mail from Python script:
     Has to be added under API & Services OAuth consent screen (edit app registration)
 (f) Test user:  the e-mail address from before 
 
+
+Python Background for e-mail creation and sending
 (4)	Create testing script:
 https://developers.google.com/gmail/api/quickstart/python 
 Run the test script, you should see something like "you got access to an app .....". After some "continue" you should see:
