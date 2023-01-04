@@ -1,0 +1,426 @@
+# This python script asks for your location and then sends you a notification when revontuli might be visible
+
+# Implementation plan and potential sources:
+# 1) Finding the right station:
+#
+# Show user the map and let him click from a radio list the closest station
+
+# 2) Extracting the figure from https://aurorasnow.fmi.fi/public_service/images/mag_disturb_hour_fi.png
+# Check if the chosen city has a red or blue dot in the figure with the map
+# https://www.kite.com/python/answers/how-to-find-the-rgb-value-of-a-pixel-in-python
+# Alternatively use pilar-graph of that station, find last pilar
+# Check if colour in html element of last pilar is NOT 141
+# Open CV https://www.youtube.com/watch?v=BR4jGk7oOoE
+# This function has to be called every 10 Minutes
+# see electricity python for the code and how to set this up in windows
+
+# 3) Notification of user
+# Potential choices and approaches
+# Step 1: Screen (Tkinker)
+# Step 2: email (https://realpython.com/python-send-email/ or
+# https://pythoninoffice.com/use-python-to-send-whatsapp-message/ (gmail & whatsapp)
+# Step 3: phone? SMS requires account with an SMS provider (costs)
+# Whatsapp: https://medium.com/@jihargifari/how-to-send-multiple-whatsapp-message-using-python-3f1f19c5976b
+# https://www.geeksforgeeks.org/whatsapp-using-python/
+
+
+from __future__ import print_function
+import pip
+import requests
+from tkinter import *
+import PIL
+from PIL import Image, ImageTk
+import shutil
+import datetime
+import pandas as pd
+from bs4 import BeautifulSoup
+import cv2
+import numpy as np
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from time import sleep
+
+import os.path
+import base64
+from email.message import EmailMessage
+
+
+def Find_Station(List_Stations_l):  # input stations, user is asked to identify the one closest to him
+    # https://www.tutorialsteacher.com/python/create-gui-using-tkinter-python (good tutorial on tkinker for UI)
+    data = List_Stations_l
+    window = Tk()
+    # display = ImageTk.PhotoImage(Image.open(kuva))
+    fin = Image.open('Finland.png').resize((170,320))  # .convert("RGB")
+    # Fin.show() # image shows now a bit flat
+    # Label.pack()
+    # window.mainloop()
+    # below works, but no image
+    window.tkimage = ImageTk.PhotoImage(fin)
+    Label(window, image=window.tkimage).place(x=0, y=0, relwidth=1, relheight=1)
+    Label(window, text="Please click the station nearest to you", fg='red', font=("Helvetica", 16)).grid(row=0, sticky=W)
+    l = len(data)
+
+    # Creating a list of the stations to click
+    i = 0
+    v = []
+    C = []
+
+    for name in data:  # goes through data which is list of stations
+        v.append(IntVar())  # extend list for i'th element
+        # Create entry for each station
+        C.append(Checkbutton(window, text=name, variable=v[i]))  #  Creates buttons with station names
+        C[i].grid(row=i+2, sticky=W)
+        i = i + 1
+
+    def var_states():
+        global selected
+        selected = []
+        print("\n")
+        for i in range(l):
+        # next line shows if a recipe has been clicked or not
+        # print(data[i] + ": %d " % (v[i].get())) # the v[1].get() fetches the state of the checkbox, 1 if clicked, zero if not
+        # Storing the name of the selected station
+            if v[i].get() != 0: # if selected
+                selected = data[i]
+
+        window.destroy()
+        return selected
+
+    # https://www.python-course.eu/tkinter_checkboxes.php - checkboxes and clicking them tutorial
+    Button(window, text='Done', command=var_states, font="ariel 15 bold", bg="black", fg="white").grid(row=l+3, sticky=W, pady=l+3)
+    # This button, if clicked calls the var_states function, which checks what checkbuttons were clicked
+
+    # Window format stuff
+    window.title('Station Selection')
+    window.geometry("500x400+10+10")
+    window.wm_attributes("-topmost", 1)  # puts window on top
+    window.mainloop()
+    Closest_Station_l = selected
+    return Closest_Station_l
+
+
+def config(List_Station_Names):
+    try:
+        with open('RevontuliConfiguration.txt', 'x') as f:  # if no file exist, this is executed
+            #  print("1")
+            print(List_Station_Names)
+            Closest_Station_l = Find_Station(List_Station_Names)
+            Closest_Station_l = Closest_Station_l + ","
+
+            posti_sender = input("Insert your normal sending e-mail: ")
+            posti_sender = posti_sender + ","
+            posti_receiver = input("Insert your special aurora notification e-mail: ")
+            posti_receiver = posti_receiver + ","
+
+            start_time = input("What time should the observations start? e.g. 18.00 ")
+            start_time = start_time + ","
+            end_time = input("What time should the observations end? e.g. 07.00 ")
+            end_time = end_time + ","
+
+            #  API_key = input("insert your google API key for the e-mail access: ")
+            #  API_key = API_key +","
+            #  Client_Id_API=input("Insert your google client ID here for the API key: ")
+
+            # lines = Closest_Station_l+posti_sender+posti_receiver+start_time+end_time+API_key+Client_Id_API
+            # encoding?
+            lines = Closest_Station_l + posti_sender + posti_receiver + start_time + end_time
+            lines = lines.encode('utf-8').decode('utf-8', 'ignore')  # this has still the "ä"
+            f.writelines(lines)  # encoding problem with ä # f.write('\n'.join(lines)) alternative
+            configuration_data = lines
+    except IOError:
+        with open('RevontuliConfiguration.txt', 'r') as f:  # if a file exist, it will be overwritten by this text
+            #  print("loop 2")
+            Closest_Station_l = f.readline()
+            lines = f.readlines()
+            count = 0
+            # Strips the newline character
+            for lin in lines:
+                count += 1
+                print("Line{}: {}".format(count, lin.strip()))
+            # print(Closest_Station_l)
+            configuration_data = Closest_Station_l
+            # f.write('Create a new text file!')
+            pass
+    return configuration_data
+
+def crop(city):
+    img = cv2.imread("Finland.png")
+    # Resizing the image
+    image = cv2.resize(img, (700, 600))
+
+    # dictionary for cropping windows - format city is the key, the value is the list and the order is y,x,h,w
+    crop_dict = dict({'Tartu': [500, 200, 200, 250], 'Nurmijarvi': [400, 100, 200, 250],
+                      'Hankasalmi': [360, 150, 60, 250], 'Mekrijarvi': [330, 360, 60, 250],
+                      'Oulujarvi': [260, 340, 60, 250], 'Ranua': [200, 200, 60, 250],
+                      'Pello': [150, 100, 60, 250], 'Sodankyla': [150, 300, 60, 250],
+                      'Muonio': [100, 100, 60, 250], 'Ivalo': [90, 300, 60, 250],
+                      'Kilpisjarvi': [63, 11, 60, 250], 'Kevo': [50, 300, 60, 250]})
+
+    quadruple = crop_dict.get(city)  # fetch for the given city, the coordinates for cropping the map
+    y = quadruple[0]
+    x = quadruple[1]
+    h = quadruple[2]
+    w = quadruple[3]
+
+    #  crop_img is the cropped image around the given city
+    crop_img = image[y:y + h, x:x + w].copy()  # 0,0 is in upper left corner of the map, here
+    # cv2.imshow("cropped", crop_img) # shows image
+    # cv2.waitKey(0)
+
+    file = 'Finland_crop.png'  # png file which contains the cropped image around the given city
+    cv2.imwrite(file, crop_img)
+
+    return
+
+def check_time(config_data_list):
+    #  code starts
+    # time window is populated
+    # code wants to call detect_colour function - > this should only be called if in the right time window, if not
+    # in right time window, delay of calling this function -> time window check
+    # the call should run in a look every 10 min until the end-time is hit and then sleep till next start time
+    #
+    # detection is positive - > counter is set for each calling of the send_Alert, the send_Alert is no longer
+    # send after three times for that night(!) i.e. we have to increase the counter with each send_Alert up to three
+    # and then the send_Alert is set to zero and the send_Alert function is no longer called (maybe some boolean) that
+    # is reset on the daily level?
+    now = datetime.datetime.now()
+    # print(now)
+    year = datetime.date.today().year
+    month = datetime.date.today().month
+    day = datetime.date.today().day
+
+    start_config_file_time = config_data_list[3]  # format e.g. 14.00
+    start_list_from_config = start_config_file_time.split('.')  # list [14,0] those are strings
+    start_hour = int(start_list_from_config[0])  # 14 in case
+    start_minutes = int(start_list_from_config[1])  # 0 in our case
+
+    end_config_file_time = config_data_list[4]
+    end_list_from_config = end_config_file_time.split('.')
+    end_hour = int(end_list_from_config[0])
+    end_minutes = int(end_list_from_config[1])
+    day_s = day
+    if start_hour > end_hour and now.hour < 12:
+        day_s = day - 1
+        print("start day ", day_s)
+    start_time = datetime.datetime(year, month, day_s, start_hour, start_minutes)
+    day_e = day
+    if start_hour > end_hour and now.hour > 12:
+        # the user may set the end monitoring hour to 23, then the end-
+        # day is not the next day
+        # end time before beginning time?
+        day_e = day + 1
+        print("end day ", day)
+
+    end_time = datetime.datetime(year, month, day_e, end_hour, end_minutes)
+    # print(start_time)
+    # print(end_time)
+
+    if start_time < now and end_time > now:
+        print("time now:", now)  # jumps back to main to then send alert, if colour is red
+        print("end_time", end_time
+              )
+        return True
+        # should run in a loop till end_time
+    else:
+        print("time-from-else loop:", "start time", start_time, "end time", end_time, "now", now)
+        sleep(2)
+        # start_time_long = datetime.time(start_hour,start_minu+tes,1,1)
+        # wait_for_next_night_counter = start_time_long - now # probably time formats don't work also need to convert
+        # sleep(10)  # to be replaced with wait_for_next_night_counter
+        # into seconds for the sleep function
+        # print(wait_for_next_night_counter) # calculate time till next start and go to
+        # sleep(wait_for_next_night_counter)
+
+    return False
+
+def detect_colour():
+    # Python program to identify
+    # color in images
+
+    # Read the images
+    image = cv2.imread("Finland_crop.png")
+
+    # Resizing the image
+    # image = cv2.resize(img, (700, 600))
+
+    # Convert Image to Image HSV
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    # Defining lower and upper bound HSV blue values
+    lower_blue = np.array([110, 50, 50])  # =light blue
+    upper_blue = np.array([130, 255, 255])  # =dark blue
+
+    # Defining mask for detecting color
+    mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
+    output_blue = cv2.bitwise_and(image, image, mask=mask_blue)
+
+    # Defining lower and upper bound HSV red values
+    lower_red = np.array([0, 100, 100])  # =light red
+    upper_red = np.array([10, 255, 255])  # =dark red
+
+    # Defining mask for detecting red color
+    mask_red = cv2.inRange(hsv, lower_red, upper_red)
+    output_red = cv2.bitwise_and(image, image, mask=mask_red)
+    # print(type(output))
+    # print(output)
+
+    something_to_see = False
+
+    hasBlue = np.sum(mask_blue)
+    if hasBlue > 0:
+        print('Blue detected!')
+        output = output_blue
+
+    hasRed = np.sum(mask_red)
+    if hasRed > 0:
+        print('Red detected!')
+        something_to_see = True  # red dot found at station near you
+        output = output_red
+
+    # Display Image and Mask
+    # cv2.imshow("Color Detected", np.hstack((image, output)))
+    # cv2.waitKey(0)  # Make python sleep for unlimited time
+    cv2.destroyAllWindows()
+    return something_to_see
+
+def send_alert(SCOPES, configuration_data_list):
+    # install google stuff in python (via settings)
+    # for the google part below we need some walk through for "normal" users
+    # use API https://developers.google.com/gmail/api/quickstart/python for that one needs to create project
+    # https://developers.google.com/workspace/guides/create-project
+    # left hand side enable google workspace APIs
+    # Create credentials https://developers.google.com/workspace/guides/create-credentials
+    # I think we need Oauth credentials
+    # https://developers.google.com/workspace/guides/create-credentials#oauth-client-id
+    # sending e-mail https://geekflare.com/send-gmail-in-python/
+    # https://developers.google.com/gmail/api/guides/sending#python (creating draft and sending message)
+
+    creds = None
+    # get token / credentials right
+    # https://developers.google.com/gmail/api/auth/scopes
+    # https://www.googleapis.com/auth/gmail.send
+    # The file token.json stores the user's access and refresh tokens, and is
+    # created automatically when the authorization flow completes for the first
+    # time.
+    # client_secret_164470656816-k67o361pke96043e36gfhqkga8m6b6of.apps.googleusercontent.com.json
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+        print(creds)
+
+    # If there are no (valid) credentials available, let the user log in.
+    # https://www.thepythoncode.com/article/use-gmail-api-in-python
+    # https://developers.google.com/gmail/api/quickstart/python
+
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request()) #  If this does not work:
+            # download from google client_secret_long_random, rename to credenials.json, delete token.json, run again
+            # go to webbrowser to accept the login
+            # after that it should run several times, it might be that this has to be done once in a while
+
+        else:   # the client secret file need to be generic below
+            # flow = InstalledAppFlow.from_client_secrets_file(
+            #     'client_secret_164470656816-k67o361pke96043e36gfhqkga8m6b6of.apps.googleusercontent.com.json', SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file(
+                'credentials.json', SCOPES)
+            creds = flow.run_local_server(port=0)
+        # Save the credentials for the next run
+        with open('token.json', 'w') as token:
+            token.write(creds.to_json())
+
+    try:
+        # Call the Gmail API
+        service = build('gmail', 'v1', credentials=creds)
+
+        # message creation
+        message = EmailMessage()
+
+        message.set_content('This is automated draft mail')
+        #  print(configuration_data_list to check where in the list actually sits what e-mail)
+        message['To'] = configuration_data_list[2]  #  'revontuli.nyt@gmail.com' replaced by input from configuration
+        message['From'] = configuration_data_list[1]  # 'silke.holtmanns@gmail.com' replaced by input from configuration
+        message['Subject'] = 'Look to the sky 2'
+
+        encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+
+        create_message = {
+            'message': {
+                'raw': encoded_message
+            }
+        }
+        draft = service.users().drafts().create(userId="me",
+                                                body=create_message).execute()
+
+        print(F'Draft id: {draft["id"]}\nDraft message: {draft["message"]}')
+
+        # Below will print out the labels of the inbox, was in example code, we just left it
+        # results = service.users().labels().list(userId='me').execute()
+        # labels = results.get('labels', [])
+
+        # if not labels:
+        #    print('No labels found.')
+        #    return
+        # print('Labels:')
+        # for label in labels:
+        #    print(label['name'])
+
+    except HttpError as error:
+        # TODO(developer) - Handle errors from gmail API.
+        print(f'An error occurred: {error}')
+        draft = None
+
+    try:
+
+        # encoded message
+        # encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
+
+        create_message = {
+            'raw': encoded_message
+        }
+
+        send_message = (service.users().messages().send
+                        (userId="me", body=create_message).execute())
+        print(F'Message Id: {send_message["id"]}')
+
+    except HttpError as error:
+        print(F'Another error occurred: {error}')
+        send_message = None
+
+    return send_message
+
+
+def main():
+    # Next steps, put configuration into extra function, which is only called, if there is no configuration
+    List_Station_Names = ['Tartu', 'Nurmijarvi', 'Hankasalmi', 'Mekrijarvi', 'Oulujarvi', 'Ranua', 'Pello',
+                          'Sodankyla', 'Muonio', 'Ivalo', 'Kilpisjarvi', 'Kevo']  # Fixed list of station names
+
+    config_data = config(List_Station_Names)  # creates / pulls configuration data (location, e-mails, times)
+
+    config_data_list = config_data.split(",")
+    # print(config_data_list)
+    print('Closest Station: ', config_data_list[0])
+    print("Sending e-mail:", config_data_list[1])
+
+    # If modifying these scopes, delete the file token.json.
+    SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
+
+    crop(config_data_list[0])  # the name of the city is given to the crop function
+
+    watch_time = check_time(config_data_list)  # this is checking the time and if it should go to sleep or run,
+    # if in the right time window, the program continues
+
+    while watch_time ==True:
+        revontuli_active = detect_colour()  # returns True if there is something to see
+        if revontuli_active == True:  # should be True, but for testing I put it to False
+            send_alert(SCOPES, config_data_list)
+        sleep(600)  # fmi page is refreshed every 10 minutes i.e., 600 seconds
+        watch_time = check_time(config_data_list)  # if the watch-time is over then this will turn false and the
+        #  program ends, meaning that after one night, this turns false and the program ends, calculate
+        #  pause time and then pause and start again?
+
+
+if __name__ == "__main__":
+    main()
