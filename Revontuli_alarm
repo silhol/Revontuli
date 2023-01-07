@@ -20,8 +20,7 @@
 # Step 2: email (https://realpython.com/python-send-email/ or
 # https://pythoninoffice.com/use-python-to-send-whatsapp-message/ (gmail & whatsapp)
 # Step 3: phone? SMS requires account with an SMS provider (costs)
-# Whatsapp: https://medium.com/@jihargifari/how-to-send-multiple-whatsapp-message-using-python-3f1f19c5976b
-# https://www.geeksforgeeks.org/whatsapp-using-python/
+# Settled for creating a special gmail, bit of hazzle with the access and API keys, but at least free
 
 # Cloud https://www.heroku.com/
 
@@ -128,8 +127,7 @@ def config(List_Station_Names):
             # lines = Closest_Station_l+posti_sender+posti_receiver+start_time+end_time+API_key+Client_Id_API
             # encoding?
             lines = Closest_Station_l + posti_sender + posti_receiver + start_time + end_time
-            lines = lines.encode('utf-8').decode('utf-8', 'ignore')  # this has still the "ä"
-            f.writelines(lines)  # encoding problem with ä # f.write('\n'.join(lines)) alternative
+            f.writelines(lines)  # encoding problem with ä so we renamed all järvi to jarvi
             configuration_data = lines
     except IOError:
         with open('RevontuliConfiguration.txt', 'r') as f:  # if a file exist, it will be overwritten by this text
@@ -342,8 +340,8 @@ def send_alert(SCOPES, configuration_data_list):
 
         message.set_content('This is automated draft mail')
         #  print(configuration_data_list to check where in the list actually sits what e-mail)
-        message['To'] = configuration_data_list[2]  #  'revontuli.nyt@gmail.com' replaced by input from configuration
-        message['From'] = configuration_data_list[1]  # 'silke.holtmanns@gmail.com' replaced by input from configuration
+        message['To'] = configuration_data_list[2]  #  'my revontuli gmail' replaced by input from configuration
+        message['From'] = configuration_data_list[1]  # 'my private gmail' replaced by input from configuration
         message['Subject'] = 'Look to the sky 2'
 
         encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
