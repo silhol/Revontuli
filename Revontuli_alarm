@@ -16,13 +16,14 @@
 
 # 3) Notification of user
 # Potential choices and approaches
-# Step 1: Screen (Tkinker)
+# Step 1: Screen (Tkinker, see recipe python)
 # Step 2: email (https://realpython.com/python-send-email/ or
 # https://pythoninoffice.com/use-python-to-send-whatsapp-message/ (gmail & whatsapp)
 # Step 3: phone? SMS requires account with an SMS provider (costs)
 # Whatsapp: https://medium.com/@jihargifari/how-to-send-multiple-whatsapp-message-using-python-3f1f19c5976b
 # https://www.geeksforgeeks.org/whatsapp-using-python/
 
+# Cloud https://www.heroku.com/
 
 from __future__ import print_function
 import pip
@@ -201,16 +202,15 @@ def check_time(config_data_list):
     end_list_from_config = end_config_file_time.split('.')
     end_hour = int(end_list_from_config[0])
     end_minutes = int(end_list_from_config[1])
-    day_s = day
-    if start_hour > end_hour and now.hour < 12:
+    day_s = day  # the day for starting is assumed to be today (now), with every 10 min check the "now" moves forward
+    # and will land at the next day after midnight, this case is caught later and the day is increased.
+
+    if start_hour > end_hour and now.hour < 12:  # for example 23.00 and 2.00 and now is "in the small morning hours"
         day_s = day - 1
         print("start day ", day_s)
     start_time = datetime.datetime(year, month, day_s, start_hour, start_minutes)
     day_e = day
-    if start_hour > end_hour and now.hour > 12:
-        # the user may set the end monitoring hour to 23, then the end-
-        # day is not the next day
-        # end time before beginning time?
+    if start_hour > end_hour and now.hour > 12:  # for example 23.00 and 2.00 and now is before midnight
         day_e = day + 1
         print("end day ", day)
 
@@ -218,15 +218,17 @@ def check_time(config_data_list):
     # print(start_time)
     # print(end_time)
 
-    if start_time < now and end_time > now:
+    if start_time < now and end_time > now:  # now is in the specified time monitoring time window
         print("time now:", now)  # jumps back to main to then send alert, if colour is red
         print("end_time", end_time
               )
         return True
         # should run in a loop till end_time
-    else:
+    else:  # outside the specified time window
         print("time-from-else loop:", "start time", start_time, "end time", end_time, "now", now)
-        sleep(2)
+        sleep_time = start_time - now
+        print("Sleep time", sleep_time.total_seconds())
+        sleep(sleep_time.total_seconds())
         # start_time_long = datetime.time(start_hour,start_minu+tes,1,1)
         # wait_for_next_night_counter = start_time_long - now # probably time formats don't work also need to convert
         # sleep(10)  # to be replaced with wait_for_next_night_counter
