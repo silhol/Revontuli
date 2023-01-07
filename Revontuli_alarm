@@ -322,8 +322,6 @@ def send_alert(SCOPES, configuration_data_list):
             # after that it should run several times, it might be that this has to be done once in a while
 
         else:   # the client secret file need to be generic below
-            # flow = InstalledAppFlow.from_client_secrets_file(
-            #     'client_secret_164470656816-k67o361pke96043e36gfhqkga8m6b6of.apps.googleusercontent.com.json', SCOPES)
             flow = InstalledAppFlow.from_client_secrets_file(
                 'credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
