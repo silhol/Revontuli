@@ -2,7 +2,6 @@
 
 # Implementation plan and potential sources:
 # 1) Finding the right station:
-#
 # Show user the map and let him click from a radio list the closest station
 
 # 2) Extracting the figure from https://aurorasnow.fmi.fi/public_service/images/mag_disturb_hour_fi.png
