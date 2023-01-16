@@ -174,16 +174,14 @@ def crop(city):
     return
 
 def check_time(config_data_list):
-    #  code starts
-    # time window is populated
+    # code starts
+    # time window is populated (start/end) and this goes to configuration file
+    # we assume that the first time is somewhere after midday e.g. 14.00 and the second can be any time
     # code wants to call detect_colour function - > this should only be called if in the right time window, if not
     # in right time window, delay of calling this function -> time window check
     # the call should run in a look every 10 min until the end-time is hit and then sleep till next start time
-    #
-    # detection is positive - > counter is set for each calling of the send_Alert, the send_Alert is no longer
-    # send after three times for that night(!) i.e. we have to increase the counter with each send_Alert up to three
-    # and then the send_Alert is set to zero and the send_Alert function is no longer called (maybe some boolean) that
-    # is reset on the daily level?
+    # detection if positive - > counter is set for each calling of the send_Alert
+
     now = datetime.datetime.now()
     # print(now)
     year = datetime.date.today().year
@@ -223,17 +221,18 @@ def check_time(config_data_list):
         # should run in a loop till end_time
     else:  # outside the specified time window
         print("time-from-else loop:", "start time", start_time, "end time", end_time, "now", now)
-        sleep_time = start_time - now
-        print("Sleep time", sleep_time.total_seconds())
-        sleep(sleep_time.total_seconds())
-        # start_time_long = datetime.time(start_hour,start_minu+tes,1,1)
-        # wait_for_next_night_counter = start_time_long - now # probably time formats don't work also need to convert
-        # sleep(10)  # to be replaced with wait_for_next_night_counter
-        # into seconds for the sleep function
-        # print(wait_for_next_night_counter) # calculate time till next start and go to
-        # sleep(wait_for_next_night_counter)
-
+        start_time = datetime.datetime(year, month, day_s + 1, start_hour, start_minutes)
+        sleep_time = start_time - now  # calculates difference to next starting time
+        print("Sleep time before", sleep_time.total_seconds())
+        sleep(sleep_time.total_seconds()+2)  # sleeps (works in seconds) till this program should continue
+        # we gave it two more seconds to avoid that it gets into a weird state
+        print("wake up is next step")
+        check_time(config_data_list)  # after the sleep the checking should start again
+        return True
+        # if you want to stop the program you have to stop the python execution
+    print("The program went here to return false")
     return False
+
 
 def detect_colour():
     # Python program to identify
