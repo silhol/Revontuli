@@ -2,6 +2,7 @@
 
 # Implementation plan and potential sources:
 # 1) Finding the right station:
+#
 # Show user the map and let him click from a radio list the closest station
 
 # 2) Extracting the figure from https://aurorasnow.fmi.fi/public_service/images/mag_disturb_hour_fi.png
@@ -19,7 +20,8 @@
 # Step 2: email (https://realpython.com/python-send-email/ or
 # https://pythoninoffice.com/use-python-to-send-whatsapp-message/ (gmail & whatsapp)
 # Step 3: phone? SMS requires account with an SMS provider (costs)
-# Settled for creating a special gmail, bit of hazzle with the access and API keys, but at least free
+# Whatsapp: https://medium.com/@jihargifari/how-to-send-multiple-whatsapp-message-using-python-3f1f19c5976b
+# https://www.geeksforgeeks.org/whatsapp-using-python/
 
 # Cloud https://www.heroku.com/
 
@@ -27,6 +29,7 @@ from __future__ import print_function
 import pip
 import requests
 from tkinter import *
+#  https://intellij-support.jetbrains.com/hc/en-us/community/posts/360010719620-No-tkinter-in-pycharm
 import PIL
 from PIL import Image, ImageTk
 import shutil
@@ -35,7 +38,7 @@ import pandas as pd
 from bs4 import BeautifulSoup
 import cv2
 import numpy as np
-from google.auth.transport.requests import Request
+from google.auth.transport.requests import Request # look in settings for google-auth
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
@@ -51,8 +54,11 @@ def Find_Station(List_Stations_l):  # input stations, user is asked to identify 
     # https://www.tutorialsteacher.com/python/create-gui-using-tkinter-python (good tutorial on tkinker for UI)
     data = List_Stations_l
     window = Tk()
-    # display = ImageTk.PhotoImage(Image.open(kuva))
-    fin = Image.open('Finland.png').resize((170,320))  # .convert("RGB")
+    # https://cdn.fmi.fi/weather-observations/products/magnetic-disturbance-observations/map-fi.png
+    urllib.request.urlretrieve(
+        "https://cdn.fmi.fi/weather-observations/products/magnetic-disturbance-observations/map-fi.png", "Finland.png")
+    fin = Image.open("Finland.png").resize((170, 320))  # .convert("RGB")
+    
     # Fin.show() # image shows now a bit flat
     # Label.pack()
     # window.mainloop()
@@ -65,24 +71,23 @@ def Find_Station(List_Stations_l):  # input stations, user is asked to identify 
     # Creating a list of the stations to click
     i = 0
     v = []
-    C = []
+    c = []
 
     for name in data:  # goes through data which is list of stations
         v.append(IntVar())  # extend list for i'th element
         # Create entry for each station
-        C.append(Checkbutton(window, text=name, variable=v[i]))  #  Creates buttons with station names
-        C[i].grid(row=i+2, sticky=W)
+        c.append(Checkbutton(window, text=name, variable=v[i]))  # Creates buttons with station names
+        c[i].grid(row=i+2, sticky=W)
         i = i + 1
 
-    def var_states():
+    def var_states():  # this is for catching the click, a bit of ugly code
         global selected
         selected = []
         print("\n")
-        for i in range(l):
-        # next line shows if a recipe has been clicked or not
-        # print(data[i] + ": %d " % (v[i].get())) # the v[1].get() fetches the state of the checkbox, 1 if clicked, zero if not
-        # Storing the name of the selected station
-            if v[i].get() != 0: # if selected
+        for i in range(l):  # next line shows if a recipe has been clicked or not
+            # print(data[i] + ": %d " % (v[i].get())) # the v[1].get() fetches the state
+            # of the checkbox, 1 if clicked, zero if not and storing the name of the selected station
+            if v[i].get() != 0:  # if selected
                 selected = data[i]
 
         window.destroy()
@@ -124,9 +129,8 @@ def config(List_Station_Names):
             #  Client_Id_API=input("Insert your google client ID here for the API key: ")
 
             # lines = Closest_Station_l+posti_sender+posti_receiver+start_time+end_time+API_key+Client_Id_API
-            # encoding?
             lines = Closest_Station_l + posti_sender + posti_receiver + start_time + end_time
-            f.writelines(lines)  # encoding problem with ä so we renamed all järvi to jarvi
+            f.writelines(lines)  # encoding problem with ä, just renamed the järvi -> jarvi
             configuration_data = lines
     except IOError:
         with open('RevontuliConfiguration.txt', 'r') as f:  # if a file exist, it will be overwritten by this text
@@ -173,6 +177,7 @@ def crop(city):
 
     return
 
+
 def check_time(config_data_list):
     # code starts
     # time window is populated (start/end) and this goes to configuration file
@@ -201,12 +206,12 @@ def check_time(config_data_list):
     # and will land at the next day after midnight, this case is caught later and the day is increased.
 
     if start_hour > end_hour and now.hour < 12:  # for example 23.00 and 2.00 and now is "in the small morning hours"
-        day_s = day - 1
+        day_s = day - 1  # this will throw an error for the first day of the month
         print("start day ", day_s)
     start_time = datetime.datetime(year, month, day_s, start_hour, start_minutes)
     day_e = day
     if start_hour > end_hour and now.hour > 12:  # for example 23.00 and 2.00 and now is before midnight
-        day_e = day + 1
+        day_e = day + 1  # here we get an error for the end of the  month!
         print("end day ", day)
 
     end_time = datetime.datetime(year, month, day_e, end_hour, end_minutes)
@@ -284,6 +289,7 @@ def detect_colour():
     cv2.destroyAllWindows()
     return something_to_see
 
+
 def send_alert(SCOPES, configuration_data_list):
     # install google stuff in python (via settings)
     # for the google part below we need some walk through for "normal" users
@@ -291,7 +297,7 @@ def send_alert(SCOPES, configuration_data_list):
     # https://developers.google.com/workspace/guides/create-project
     # left hand side enable google workspace APIs
     # Create credentials https://developers.google.com/workspace/guides/create-credentials
-    # I think we need Oauth credentials
+    # Oauth credentials:
     # https://developers.google.com/workspace/guides/create-credentials#oauth-client-id
     # sending e-mail https://geekflare.com/send-gmail-in-python/
     # https://developers.google.com/gmail/api/guides/sending#python (creating draft and sending message)
@@ -303,6 +309,7 @@ def send_alert(SCOPES, configuration_data_list):
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
+    # client_secret_164470656816-k67o361pke96043e36gfhqkga8m6b6of.apps.googleusercontent.com.json
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
         print(creds)
@@ -313,7 +320,7 @@ def send_alert(SCOPES, configuration_data_list):
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request()) #  If this does not work:
+            creds.refresh(Request())  # If this does not work:
             # download from google client_secret_long_random, rename to credenials.json, delete token.json, run again
             # go to webbrowser to accept the login
             # after that it should run several times, it might be that this has to be done once in a while
@@ -335,9 +342,9 @@ def send_alert(SCOPES, configuration_data_list):
 
         message.set_content('This is automated draft mail')
         #  print(configuration_data_list to check where in the list actually sits what e-mail)
-        message['To'] = configuration_data_list[2]  #  'my revontuli gmail' replaced by input from configuration
-        message['From'] = configuration_data_list[1]  # 'my private gmail' replaced by input from configuration
-        message['Subject'] = 'Look to the sky 2'
+        message['To'] = configuration_data_list[2]  # 'my_revontuli email' replaced by input from configuration
+        message['From'] = configuration_data_list[1]  # 'my_private g-email' replaced by input from configuration
+        message['Subject'] = 'Look to the sky - test'
 
         encoded_message = base64.urlsafe_b64encode(message.as_bytes()).decode()
 
@@ -405,16 +412,16 @@ def main():
     crop(config_data_list[0])  # the name of the city is given to the crop function
 
     watch_time = check_time(config_data_list)  # this is checking the time and if it should go to sleep or run,
-    # if in the right time window, the program continues
+    # if in the right time window, the program continues, else the check_time is in sleep modus
 
-    while watch_time ==True:
+    while watch_time == True:
         revontuli_active = detect_colour()  # returns True if there is something to see
-        if revontuli_active == True:  # should be True, but for testing I put it to False
+        if revontuli_active == True:  # should be True, but for testing I put it to False (there is rarely red)
             send_alert(SCOPES, config_data_list)
         sleep(600)  # fmi page is refreshed every 10 minutes i.e., 600 seconds
         watch_time = check_time(config_data_list)  # if the watch-time is over then this will turn false and the
-        #  program ends, meaning that after one night, this turns false and the program ends, calculate
-        #  pause time and then pause and start again?
+        #  program ends, meaning that after one night, this turns false and the program ends, but I changed
+        #  the check_time and now it sleeps till the next start_time
 
 
 if __name__ == "__main__":
