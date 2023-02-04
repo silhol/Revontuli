@@ -16,14 +16,14 @@
 
 # 3) Notification of user
 # Potential choices and approaches
-# Step 1: Screen (Tkinker, see recipe python)
-# Step 2: email (https://realpython.com/python-send-email/ or
+# Step 1: Screen (Tkinker, similar to HS project, works well)
+# Step 2: email (https://realpython.com/python-send-email/ (e-mail approach was taken in the end, as SMS would have costm money)
 # https://pythoninoffice.com/use-python-to-send-whatsapp-message/ (gmail & whatsapp)
 # Step 3: phone? SMS requires account with an SMS provider (costs)
 # Whatsapp: https://medium.com/@jihargifari/how-to-send-multiple-whatsapp-message-using-python-3f1f19c5976b
 # https://www.geeksforgeeks.org/whatsapp-using-python/
 
-# Cloud https://www.heroku.com/
+# Cloud hosting e.g. https://www.heroku.com/ can be used, this script is currently running on our own laptops
 
 from __future__ import print_function
 import pip
