@@ -50,13 +50,17 @@ import urllib
 from email.message import EmailMessage
 
 
-def Find_Station(List_Stations_l):  # input stations, user is asked to identify the one closest to him
+def Find_Station(List_Stations_l):  # input stations, user is asked to identify the one closest to hi
+
     # https://www.tutorialsteacher.com/python/create-gui-using-tkinter-python (good tutorial on tkinker for UI)
     data = List_Stations_l
     window = Tk()
-    # https://cdn.fmi.fi/weather-observations/products/magnetic-disturbance-observations/map-fi.png
-    urllib.request.urlretrieve(
-        "https://cdn.fmi.fi/weather-observations/products/magnetic-disturbance-observations/map-fi.png", "Finland.png")
+
+    f = open('Finland.png', 'wb')  # here we make sure to download the latest version of the map and overwrite
+    # the existing Finland.png file
+    f.write(urllib.request.urlopen(
+        "https://cdn.fmi.fi/weather-observations/products/magnetic-disturbance-observations/map-fi.png").read())
+    f.close()
     fin = Image.open("Finland.png").resize((170, 320))  # .convert("RGB")
 
     # Fin.show() # image shows now a bit flat
@@ -107,6 +111,7 @@ def Find_Station(List_Stations_l):  # input stations, user is asked to identify 
 
 
 def config(List_Station_Names):
+
     try:
         with open('RevontuliConfiguration.txt', 'x') as f:  # if no file exist, this is executed
             #  print("1")
@@ -148,8 +153,14 @@ def config(List_Station_Names):
             pass
     return configuration_data
 
+
 def crop(city):
-    img = cv2.imread("Finland.png")
+    f = open('Finland_crop.png', 'wb')  # here we make sure to download the latest version of the map and overwrite
+    # the existing Finland.png file
+    f.write(urllib.request.urlopen(
+        "https://cdn.fmi.fi/weather-observations/products/magnetic-disturbance-observations/map-fi.png").read())
+    f.close()
+    img = cv2.imread("Finland_crop.png")
     # Resizing the image
     image = cv2.resize(img, (700, 600))
 
@@ -175,7 +186,7 @@ def crop(city):
     file = 'Finland_crop.png'  # png file which contains the cropped image around the given city
     cv2.imwrite(file, crop_img)
 
-    return
+    return file
 
 
 def check_time(config_data_list):
@@ -239,12 +250,12 @@ def check_time(config_data_list):
     return False
 
 
-def detect_colour():
+def detect_colour(Crop_map):
     # Python program to identify
     # color in images
 
     # Read the images
-    image = cv2.imread("Finland_crop.png")
+    image = cv2.imread(Crop_map)
 
     # Resizing the image
     # image = cv2.resize(img, (700, 600))
@@ -287,6 +298,9 @@ def detect_colour():
     # cv2.imshow("Color Detected", np.hstack((image, output)))
     # cv2.waitKey(0)  # Make python sleep for unlimited time
     cv2.destroyAllWindows()
+
+    # if you want to reset the credentials (token.json file and see if it works, delete the comment sign in the next row
+    # something_to_see = True
     return something_to_see
 
 
@@ -321,7 +335,8 @@ def send_alert(SCOPES, configuration_data_list):
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())  # If this does not work:
-            # download from google client_secret_long_random, rename to credenials.json, delete token.json, run again
+            # download from google client_secret_long_random, rename to credenials.json,
+            # delete token.json, run again
             # go to webbrowser to accept the login
             # after that it should run several times, it might be that this has to be done once in a while
 
@@ -399,6 +414,15 @@ def main():
     List_Station_Names = ['Tartu', 'Nurmijarvi', 'Hankasalmi', 'Mekrijarvi', 'Oulujarvi', 'Ranua', 'Pello',
                           'Sodankyla', 'Muonio', 'Ivalo', 'Kilpisjarvi', 'Kevo']  # Fixed list of station names
 
+    # The two requests are to make sure that there is no errow file not found, the file itself will
+    # later be opened and overwritten by the up-to-date map
+    urllib.request.urlretrieve(
+        "https://cdn.fmi.fi/weather-observations/products/magnetic-disturbance-observations/map-fi.png",
+        "Finland.png")
+    urllib.request.urlretrieve(
+        "https://cdn.fmi.fi/weather-observations/products/magnetic-disturbance-observations/map-fi.png",
+        "Finland_crop.png")
+
     config_data = config(List_Station_Names)  # creates / pulls configuration data (location, e-mails, times)
 
     config_data_list = config_data.split(",")
@@ -409,13 +433,14 @@ def main():
     # If modifying these scopes, delete the file token.json.
     SCOPES = ['https://www.googleapis.com/auth/gmail.modify']
 
-    crop(config_data_list[0])  # the name of the city is given to the crop function
 
     watch_time = check_time(config_data_list)  # this is checking the time and if it should go to sleep or run,
     # if in the right time window, the program continues, else the check_time is in sleep modus
 
     while watch_time == True:
-        revontuli_active = detect_colour()  # returns True if there is something to see
+        Crop_map = crop(config_data_list[0])  # the name of the city is given to the crop function and returns the
+        # cropped Finland map
+        revontuli_active = detect_colour(Crop_map)  # returns True if there is something to see
         if revontuli_active == True:  # should be True, but for testing I put it to False (there is rarely red)
             send_alert(SCOPES, config_data_list)
         sleep(600)  # fmi page is refreshed every 10 minutes i.e., 600 seconds
