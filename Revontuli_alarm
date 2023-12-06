@@ -1,4 +1,4 @@
-# This python script asks for your location and then sends you a notification when revontuli might be visible
+# This python script asks for your location and then sends you a notification when revontuli might be visible to a gmail address which you could read e.g., on your phone
 
 # Implementation plan and potential sources:
 # 1) Finding the right station:
