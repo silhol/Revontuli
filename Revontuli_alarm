@@ -2,8 +2,10 @@
 
 # Implementation plan and potential sources:
 # 1) Finding the right station:
-#
 # Show user the map and let him click from a radio list the closest station
+# Ask for the times the script should be running
+# That information will be stored in the configuration file and if you want to change things, one has to delete the configuration file
+# This is only done for the first time, when there is no configuration file available
 
 # 2) Extracting the figure from https://aurorasnow.fmi.fi/public_service/images/mag_disturb_hour_fi.png
 # Check if the chosen city has a red or blue dot in the figure with the map
