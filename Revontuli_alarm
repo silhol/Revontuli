@@ -1,32 +1,29 @@
-# This python script asks for your location and then sends you a notification when revontuli might be visible to a gmail address which you could read e.g., on your phone
+## This python script asks for your location and then sends you a notification when the nothern lights (revontuli)
+# might be visible
 
 # Implementation plan and potential sources:
 # 1) Finding the right station:
+#
 # Show user the map and let him click from a radio list the closest station
-# Ask for the times the script should be running
-# That information will be stored in the configuration file and if you want to change things, one has to delete the configuration file
-# This is only done for the first time, when there is no configuration file available
+# This information is stored in a configuration file
 
 # 2) Extracting the figure from https://aurorasnow.fmi.fi/public_service/images/mag_disturb_hour_fi.png
-# Check if the chosen city has a red or blue dot in the figure with the map
+# Check if the chosen city has a red or blue or brown dot in the figure with the map
 # https://www.kite.com/python/answers/how-to-find-the-rgb-value-of-a-pixel-in-python
 # Alternatively use pilar-graph of that station, find last pilar
 # Check if colour in html element of last pilar is NOT 141
 # Open CV https://www.youtube.com/watch?v=BR4jGk7oOoE
 # This function has to be called every 10 Minutes
-# see electricity python for the code and how to set this up in windows
+# see the old electricity python project for the code and how to set this up in windows
 
 # 3) Notification of user
 # Potential choices and approaches
-# Step 1: Screen (Tkinker, similar to HS project)
-# Step 2: email (https://realpython.com/python-send-email/ (e-mail approach was taken in the end, as SMS would have costm money)
+# Step 1: Screen (Tkinker, see recipe python)
+# Step 2: email (https://realpython.com/python-send-email/ or
 # https://pythoninoffice.com/use-python-to-send-whatsapp-message/ (gmail & whatsapp)
-# Step 3: phone? SMS requires account with an SMS provider (costs)
+# Step 3: phone? SMS requires account with an SMS provider (costs) - not done
 # Whatsapp: https://medium.com/@jihargifari/how-to-send-multiple-whatsapp-message-using-python-3f1f19c5976b
 # https://www.geeksforgeeks.org/whatsapp-using-python/
-# Settled for a gmail account specific for this alarm (note that the credentials have regularly to be recreated)
-
-# Cloud hosting e.g. https://www.heroku.com/ can be used, this script is currently running on our own laptops
 
 from __future__ import print_function
 import pip
@@ -53,32 +50,30 @@ import urllib
 from email.message import EmailMessage
 
 
-def Find_Station(List_Stations_l):  # input stations, user is asked to identify the one closest to hi
+def find_station(list_stations_l):  # input stations, user is asked to identify the one closest station
 
     # https://www.tutorialsteacher.com/python/create-gui-using-tkinter-python (good tutorial on tkinker for UI)
-    data = List_Stations_l
+    data = list_stations_l
     window = Tk()
 
     f = open('Finland.png', 'wb')  # here we make sure to download the latest version of the map and overwrite
-    # the existing Finland.png file
+    # the existing Finland.png file this file contains a map with the stations
     f.write(urllib.request.urlopen(
         "https://cdn.fmi.fi/weather-observations/products/magnetic-disturbance-observations/map-fi.png").read())
     f.close()
     fin = Image.open("Finland.png").resize((170, 320))  # .convert("RGB")
 
-    # Fin.show() # image shows now a bit flat
-    # Label.pack()
-    # window.mainloop()
     # below works, but no image
     window.tkimage = ImageTk.PhotoImage(fin)
     Label(window, image=window.tkimage).place(x=0, y=0, relwidth=1, relheight=1)
-    Label(window, text="Please click the station nearest to you", fg='red', font=("Helvetica", 16)).grid(row=0, sticky=W)
-    l = len(data)
+    Label(window, text="Please click the station nearest to you", fg='red', font=("Helvetica", 16)).grid(row=0,
+                                                                                                         sticky=W)
+    l = len(data)  # length is needed to crate teh right size of box for clicking the right station
 
     # Creating a list of the stations to click
-    i = 0
-    v = []
-    c = []
+    i = 0  # counter
+    v = []  # list of stations
+    c = []  # button list with station names
 
     for name in data:  # goes through data which is list of stations
         v.append(IntVar())  # extend list for i'th element
@@ -88,7 +83,7 @@ def Find_Station(List_Stations_l):  # input stations, user is asked to identify 
         i = i + 1
 
     def var_states():  # this is for catching the click, a bit of ugly code
-        global selected
+        global selected  # a bit of quick and dirty approach
         selected = []
         print("\n")
         for i in range(l):  # next line shows if a recipe has been clicked or not
@@ -101,7 +96,9 @@ def Find_Station(List_Stations_l):  # input stations, user is asked to identify 
         return selected
 
     # https://www.python-course.eu/tkinter_checkboxes.php - checkboxes and clicking them tutorial
-    Button(window, text='Done', command=var_states, font="ariel 15 bold", bg="black", fg="white").grid(row=l+3, sticky=W, pady=l+3)
+    Button(window, text='Done', command=var_states, font="ariel 15 bold", bg="black", fg="white").grid(row=l+3,
+                                                                                                       sticky=W,
+                                                                                                       pady=l+3)
     # This button, if clicked calls the var_states function, which checks what checkbuttons were clicked
 
     # Window format stuff
@@ -109,18 +106,19 @@ def Find_Station(List_Stations_l):  # input stations, user is asked to identify 
     window.geometry("500x400+10+10")
     window.wm_attributes("-topmost", 1)  # puts window on top
     window.mainloop()
-    Closest_Station_l = selected
-    return Closest_Station_l
+    closest_station_l = selected
+    return closest_station_l
 
 
-def config(List_Station_Names):
+def config(list_station_names):  # Creates the configuration file with station to watch out for
+    # and times when the script should run
 
     try:
         with open('RevontuliConfiguration.txt', 'x') as f:  # if no file exist, this is executed
             #  print("1")
-            print(List_Station_Names)
-            Closest_Station_l = Find_Station(List_Station_Names)
-            Closest_Station_l = Closest_Station_l + ","
+            print(list_station_names)
+            closest_station_l = find_station(list_station_names)
+            closest_station_l = closest_station_l + ","
 
             posti_sender = input("Insert your normal sending e-mail: ")
             posti_sender = posti_sender + ","
@@ -137,13 +135,13 @@ def config(List_Station_Names):
             #  Client_Id_API=input("Insert your google client ID here for the API key: ")
 
             # lines = Closest_Station_l+posti_sender+posti_receiver+start_time+end_time+API_key+Client_Id_API
-            lines = Closest_Station_l + posti_sender + posti_receiver + start_time + end_time
+            lines = closest_station_l + posti_sender + posti_receiver + start_time + end_time
             f.writelines(lines)  # encoding problem with ä, just renamed the järvi -> jarvi
             configuration_data = lines
     except IOError:
         with open('RevontuliConfiguration.txt', 'r') as f:  # if a file exist, it will be overwritten by this text
             #  print("loop 2")
-            Closest_Station_l = f.readline()
+            closest_station_l = f.readline()
             lines = f.readlines()
             count = 0
             # Strips the newline character
@@ -151,7 +149,7 @@ def config(List_Station_Names):
                 count += 1
                 print("Line{}: {}".format(count, lin.strip()))
             # print(Closest_Station_l)
-            configuration_data = Closest_Station_l
+            configuration_data = closest_station_l
             # f.write('Create a new text file!')
             pass
     return configuration_data
@@ -249,7 +247,7 @@ def check_time(config_data_list):
         check_time(config_data_list)  # after the sleep the checking should start again
         return True
         # if you want to stop the program you have to stop the python execution
-    print("The program went here to return false")
+    #  print("The program went here to return false")  # This is only "check" with can be enabled
     return False
 
 
@@ -267,28 +265,40 @@ def detect_colour(Crop_map):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # Defining lower and upper bound HSV blue values
-    lower_blue = np.array([110, 50, 50])  # =light blue
+    lower_blue = np.array([110, 50, 50])  # =light blue - blue on map is 102, 204, 238
     upper_blue = np.array([130, 255, 255])  # =dark blue
 
     # Defining mask for detecting color
     mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
     output_blue = cv2.bitwise_and(image, image, mask=mask_blue)
 
-    # Defining lower and upper bound HSV red values
-    lower_red = np.array([0, 100, 100])  # =light red
-    upper_red = np.array([10, 255, 255])  # =dark red
-
+    # Defining lower and upper bound HSV red values (old map)
+    # lower_red = np.array([0, 100, 100])  # =light red - red on map is 238, 102, 119
+    # upper_red = np.array([10, 255, 255])  # =dark red
+    
+    # Defining lower and upper bound HSV red values (new 2024 map)
+    lower_red = np.array([200, 100, 100])  # =light red - red on map is 238, 102, 119
+    upper_red = np.array([250, 150, 150])  # =dark red
+    
+    # Green on 2024 map is 204, 187, 168
+    lower_green = np.array([200, 170, 150])  # =light green 
+    upper_green = np.array([220, 255, 255])  # =dark gren
+    
     # Defining mask for detecting red color
     mask_red = cv2.inRange(hsv, lower_red, upper_red)
     output_red = cv2.bitwise_and(image, image, mask=mask_red)
     # print(type(output))
     # print(output)
+    
+    mask_green = cv2.inRange(hsv, lower_green, upper_green)
+    output_green = cv2.bitwise_and(image, image, mask=mask_green)
 
     something_to_see = False
 
     hasBlue = np.sum(mask_blue)
     if hasBlue > 0:
         print('Blue detected!')
+        # something_to_see = True  # when you reset the token run the program once with this line uncommented
         output = output_blue
 
     hasRed = np.sum(mask_red)
@@ -296,6 +306,12 @@ def detect_colour(Crop_map):
         print('Red detected!')
         something_to_see = True  # red dot found at station near you
         output = output_red
+        
+    hasGreen = np.sum(mask_green)
+    if hasGreen > 0:
+        print('Green detected!')
+        something_to_see = True  # green dot found at station near you
+        output = output_green # only needed for debugging
 
     # Display Image and Mask
     # cv2.imshow("Color Detected", np.hstack((image, output)))
@@ -326,7 +342,7 @@ def send_alert(SCOPES, configuration_data_list):
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    # client_secret_164470656816-k67o361pke96043e36gfhqkga8m6b6of.apps.googleusercontent.com.json
+
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
         print(creds)
