@@ -265,31 +265,36 @@ def detect_colour(Crop_map):
     hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
     # Defining lower and upper bound HSV blue values
-    lower_blue = np.array([110, 50, 50])  # =light blue - blue on map is 102, 204, 238
+    # The picture on the webpage is not the same as the picture downloaded
+    # The web page blue is  102, 204, 238
+    # The downloaded picture blue is covered by the values below
+    lower_blue = np.array([110, 50, 50])  # =light blue
     upper_blue = np.array([130, 255, 255])  # =dark blue
 
     # Defining mask for detecting color
     mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
     output_blue = cv2.bitwise_and(image, image, mask=mask_blue)
 
-    # Defining lower and upper bound HSV red values (old map)
-    # lower_red = np.array([0, 100, 100])  # =light red - red on map is 238, 102, 119
-    # upper_red = np.array([10, 255, 255])  # =dark red
-    
-    # Defining lower and upper bound HSV red values (new 2024 map)
-    lower_red = np.array([200, 100, 100])  # =light red - red on map is 238, 102, 119
-    upper_red = np.array([250, 150, 150])  # =dark red
-    
+    # Defining lower and upper bound HSV red values for downloaded map
+    lower_red = np.array([0, 100, 100])  # =light red - red on map is 238, 102, 119
+    upper_red = np.array([10, 255, 255])  # =dark red
+
+    # Defining lower and upper bound HSV red values (new 2024 map on web page)
+    # Note, the downloaded map has the old values
+    # lower_red = np.array([200, 100, 100])  # =light red - red on map is 238, 102, 119
+    # upper_red = np.array([250, 150, 150])  # =dark red
+
     # Green on 2024 map is 204, 187, 168
-    lower_green = np.array([200, 170, 150])  # =light green 
+    # Unclear if this will appear on downloaded map, but here is the code
+    lower_green = np.array([200, 170, 150])  # =light green
     upper_green = np.array([220, 255, 255])  # =dark gren
-    
+
     # Defining mask for detecting red color
     mask_red = cv2.inRange(hsv, lower_red, upper_red)
     output_red = cv2.bitwise_and(image, image, mask=mask_red)
     # print(type(output))
     # print(output)
-    
+
     mask_green = cv2.inRange(hsv, lower_green, upper_green)
     output_green = cv2.bitwise_and(image, image, mask=mask_green)
 
@@ -298,7 +303,8 @@ def detect_colour(Crop_map):
     hasBlue = np.sum(mask_blue)
     if hasBlue > 0:
         print('Blue detected!')
-        # something_to_see = True  # when you reset the token run the program once with this line uncommented
+        # something_to_see = True  # when you reset the token (token expired)
+        # run the program once with the previous line uncommented
         output = output_blue
 
     hasRed = np.sum(mask_red)
@@ -306,12 +312,12 @@ def detect_colour(Crop_map):
         print('Red detected!')
         something_to_see = True  # red dot found at station near you
         output = output_red
-        
+
     hasGreen = np.sum(mask_green)
     if hasGreen > 0:
         print('Green detected!')
         something_to_see = True  # green dot found at station near you
-        output = output_green # only needed for debugging
+        output = output_green  # only needed for debugging
 
     # Display Image and Mask
     # cv2.imshow("Color Detected", np.hstack((image, output)))
@@ -328,7 +334,7 @@ def send_alert(SCOPES, configuration_data_list):
     # for the google part below we need some walk through for "normal" users
     # use API https://developers.google.com/gmail/api/quickstart/python for that one needs to create project
     # https://developers.google.com/workspace/guides/create-project
-    # left hand side enable google workspace APIs
+    # left-hand side enable the google workspace APIs
     # Create credentials https://developers.google.com/workspace/guides/create-credentials
     # Oauth credentials:
     # https://developers.google.com/workspace/guides/create-credentials#oauth-client-id
@@ -354,7 +360,9 @@ def send_alert(SCOPES, configuration_data_list):
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())  # If this does not work:
-            # download from google client_secret_long_random, rename to credenials.json,
+            # download from google client_secret_long_random, rename to credenials.json
+            # (only needed if you go from scratch again
+            # For expired token steps below:
             # delete token.json, run again
             # go to webbrowser to accept the login
             # after that it should run several times, it might be that this has to be done once in a while
@@ -433,7 +441,7 @@ def main():
     List_Station_Names = ['Tartu', 'Nurmijarvi', 'Hankasalmi', 'Mekrijarvi', 'Oulujarvi', 'Ranua', 'Pello',
                           'Sodankyla', 'Muonio', 'Ivalo', 'Kilpisjarvi', 'Kevo']  # Fixed list of station names
 
-    # The two requests are to make sure that there is no errow file not found, the file itself will
+    # The two requests are to make sure that there is no error file not found, the file itself will
     # later be opened and overwritten by the up-to-date map
     urllib.request.urlretrieve(
         "https://cdn.fmi.fi/weather-observations/products/magnetic-disturbance-observations/map-fi.png",
