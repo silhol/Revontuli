@@ -251,12 +251,12 @@ def check_time(config_data_list):
     return False
 
 
-def detect_colour(Crop_map):
+def detect_colour(crop_map):
     # Python program to identify
     # color in images
 
     # Read the images
-    image = cv2.imread(Crop_map)
+    image = cv2.imread(crop_map)
 
     # Resizing the image
     # image = cv2.resize(img, (700, 600))
@@ -305,13 +305,13 @@ def detect_colour(Crop_map):
         print('Blue detected!')
         # something_to_see = True  # when you reset the token (token expired)
         # run the program once with the previous line uncommented
-        output = output_blue
+        output = output_blue  # only needed for debugging
 
     hasRed = np.sum(mask_red)
     if hasRed > 0:
         print('Red detected!')
         something_to_see = True  # red dot found at station near you
-        output = output_red
+        output = output_red  # only needed for debugging
 
     hasGreen = np.sum(mask_green)
     if hasGreen > 0:
@@ -334,7 +334,7 @@ def send_alert(SCOPES, configuration_data_list):
     # for the google part below we need some walk through for "normal" users
     # use API https://developers.google.com/gmail/api/quickstart/python for that one needs to create project
     # https://developers.google.com/workspace/guides/create-project
-    # left-hand side enable the google workspace APIs
+    # The left-hand side is to enable the google workspace APIs
     # Create credentials https://developers.google.com/workspace/guides/create-credentials
     # Oauth credentials:
     # https://developers.google.com/workspace/guides/create-credentials#oauth-client-id
@@ -360,11 +360,11 @@ def send_alert(SCOPES, configuration_data_list):
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())  # If this does not work:
-            # download from google client_secret_long_random, rename to credenials.json
+            # download from google client_secret_long_random, rename to credentials.json
             # (only needed if you go from scratch again
             # For expired token steps below:
             # delete token.json, run again
-            # go to webbrowser to accept the login
+            # go to web browser to accept the login
             # after that it should run several times, it might be that this has to be done once in a while
 
         else:   # the client secret file need to be generic below
